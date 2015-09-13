@@ -1,8 +1,8 @@
 # async-class
 
 Cleaner ES6 async class methods for Node 4.0.0+. A solution to using promises
-and coroutines with classes without the overhead of babel, until node supports
-ES7 async/await.
+and coroutines with classes without the overhead of babel, or the need to adopt
+unimplemented syntax and features, until v8/node supports ES7 async/await.
 
 ## Overview
 
