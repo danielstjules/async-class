@@ -4,6 +4,8 @@ Cleaner ES6 async class methods for Node 4.0.0+. A solution to using promises
 and coroutines with classes without the overhead of babel, or the need to adopt
 unimplemented syntax and features, until v8/node supports ES7 async/await.
 
+[![Build Status](https://travis-ci.org/danielstjules/async-class.svg?branch=master)](https://travis-ci.org/danielstjules/async-class)
+
 ## Overview
 
 Using only ES6 features, how would you achieve a class like the following?
