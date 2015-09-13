@@ -1,6 +1,6 @@
 {
   "name": "async-class",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Cleaner ES6 async class methods",
   "main": "index.js",
   "scripts": {
