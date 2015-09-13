@@ -6,6 +6,12 @@ unimplemented syntax and features, until v8/node supports ES7 async/await.
 
 [![Build Status](https://travis-ci.org/danielstjules/async-class.svg?branch=master)](https://travis-ci.org/danielstjules/async-class)
 
+## Installation
+
+```
+npm install --save async-class
+```
+
 ## Overview
 
 Using only ES6 features, how would you achieve a class like the following?
@@ -76,9 +82,3 @@ wrap(FakeDataStore);
 ```
 
 Clean ES6 classes and async methods!
-
-## Installation
-
-```
-npm install --save async-class
-```
