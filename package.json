@@ -1,0 +1,37 @@
+{
+  "name": "async-class",
+  "version": "0.0.1",
+  "description": "Cleaner ES6 async class methods",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --require co-mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielstjules/async-class.git"
+  },
+  "keywords": [
+    "async",
+    "await",
+    "class",
+    "method",
+    "es6",
+    "promise",
+    "coroutine",
+    "generator"
+  ],
+  "author": "Daniel St. Jules <danielst.jules@gmail.com> (http://danielstjules.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danielstjules/async-class/issues"
+  },
+  "homepage": "https://github.com/danielstjules/async-class",
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "co-mocha": "^1.1.2",
+    "mocha": "^2.3.2"
+  },
+  "dependencies": {
+    "bluebird": "^2.10.0"
+  }
+}
