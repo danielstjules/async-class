@@ -50,6 +50,10 @@ describe('async-class', function() {
   });
 
   describe('wrap', function() {
+    it('only modifies properties that are functions', function() {
+      expect(dataStore.store).to.be.instanceOf(Map)
+    });
+
     it('does not wrap instance methods that do not end with Async', function() {
       dataStore.store.set('foo', 'bar');
       let keys = dataStore.keys();

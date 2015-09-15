@@ -49,19 +49,7 @@ FakeDataStore.prototype.setAsync = Promise.coroutine(function*(key, value) {
 };
 ```
 
-That's where this library comes in. It offers a helpful little wrap function:
-
-``` javascript
-/**
- * Wraps all static and instance methods whose name ends with Async. Any
- * GeneratorFunction is wrapped with bluebird.coroutine(), and others with
- * bluebird.method().
- *
- * @param {function} klass The class to wrap
- */
-```
-
-Using it is simple:
+That's where this library comes in. Using it is simple:
 
 ``` javascript
 'use strict';
@@ -82,3 +70,26 @@ wrap(FakeDataStore);
 ```
 
 Clean ES6 classes and async methods!
+
+## API
+
+#### async-class.wrap(klass [, methodNames])
+
+Wraps all static and instance methods whose name ends with Async. Any
+GeneratorFunction is wrapped with bluebird.coroutine(), and others with
+bluebird.method(). Accepts an optional array of method names, wrapping
+only those found in the array, and disabling the Async suffix check.
+
+#### async-class.wrapStaticMethods(klass [, methodNames])
+
+Wraps all static methods whose name ends with Async. Any GeneratorFunction
+is wrapped with bluebird.coroutine(), and others with bluebird.method().
+Accepts an optional array of method names, wrapping only those found in the
+array, and disabling the Async suffix check.
+
+#### async-class.wrapInstanceMethods(klass [, methodNames])
+
+Wraps all instance methods whose name ends with Async. Any GeneratorFunction
+is wrapped with bluebird.coroutine(), and others with bluebird.method().
+Accepts an optional array of method names, wrapping only those found in the
+array, and disabling the Async suffix check.
