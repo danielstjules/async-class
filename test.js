@@ -21,6 +21,10 @@ class FakeDataStore {
     return yield Promise.resolve('foo');
   }
 
+  static *example() {
+    return yield Promise.resolve('foo');
+  }
+
   keys() {
     let keys = [];
     for (let key of this.store.keys()) {
@@ -54,10 +58,15 @@ describe('async-class', function() {
       expect(dataStore.store).to.be.instanceOf(Map)
     });
 
-    it('does not wrap instance methods that do not end with Async', function() {
+    it('does not wrap functions that do not end with Async', function() {
       dataStore.store.set('foo', 'bar');
       let keys = dataStore.keys();
       expect(keys).to.eql(['foo']);
+    });
+
+    it('wraps all GeneratorFunctions', function*() {
+      let res = yield FakeDataStore.example();
+      expect(res).to.eql('foo');
     });
 
     it('wraps instance methods that end with Async', function*() {
