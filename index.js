@@ -6,47 +6,54 @@ let Promise = require('bluebird');
  * GeneratorFunctions. Any GeneratorFunction is wrapped with
  * bluebird.coroutine(), and others with bluebird.method(). Accepts an optional
  * array of method names, wrapping only those found in the array, and disabling
- * the Async suffix check.
+ * the Async suffix check. Returns the class.
  *
- * @param  {function} klass         The class to wrap
- * @param  {string[]} [methodNames] Optional array of method names
- * @throws {Error}    If methodNames is provided, but is not an array
+ * @param   {function} klass         The class to wrap
+ * @param   {string[]} [methodNames] Optional array of method names
+ * @returns {function} The supplied class
+ * @throws  {Error}    If methodNames is provided, but is not an array
  */
 function wrap(klass, methodNames) {
   validateMethodNames(methodNames);
-
   wrapStaticMethods(klass, methodNames);
   wrapInstanceMethods(klass, methodNames);
+  return klass;
 }
 
 /**
  * Wraps static methods whose name ends with Async or are GeneratorFunctions.
  * Any GeneratorFunction is wrapped with bluebird.coroutine(), and others with
  * bluebird.method(). Accepts an optional array of method names, wrapping only
- * those found in the array, and disabling the Async suffix check.
+ * those found in the array, and disabling the Async suffix check. Returns the
+ * class.
  *
- * @param  {function} klass         The class to wrap
- * @param  {string[]} [methodNames] Optional array of method names
- * @throws {Error}    If methodNames is provided, but is not an array
+ * @param   {function} klass         The class to wrap
+ * @param   {string[]} [methodNames] Optional array of method names
+ * @returns {function} The supplied class
+ * @throws  {Error}    If methodNames is provided, but is not an array
  */
 function wrapStaticMethods(klass, methodNames) {
   validateMethodNames(methodNames);
   wrapFunctions(klass, methodNames);
+  return klass;
 }
 
 /**
  * Wraps instance methods whose name ends with Async, or are GeneratorFunctions.
  * Any GeneratorFunction is wrapped with bluebird.coroutine(), and others with
  * bluebird.method(). Accepts an optional array of method names, wrapping only
- * those found in the array, and disabling the Async suffix check.
+ * those found in the array, and disabling the Async suffix check. Returns the
+ * class.
  *
- * @param  {function} klass         The class to wrap
- * @param  {string[]} [methodNames] Optional array of method names
- * @throws {Error}    If methodNames is provided, but is not an array
+ * @param   {function} klass         The class to wrap
+ * @param   {string[]} [methodNames] Optional array of method names
+ * @returns {function} The supplied class
+ * @throws  {Error}    If methodNames is provided, but is not an array
  */
 function wrapInstanceMethods(klass, methodNames) {
   validateMethodNames(methodNames);
   wrapFunctions(klass.prototype, methodNames);
+  return klass;
 }
 
 /**

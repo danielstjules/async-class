@@ -66,7 +66,7 @@ class FakeDataStore {
   }
 }
 
-wrap(FakeDataStore);
+module.exports = wrap(FakeDataStore);
 ```
 
 Clean ES6 classes and async methods!
@@ -79,18 +79,20 @@ Wraps static and instance methods whose name ends with Async, or are
 GeneratorFunctions. Any GeneratorFunction is wrapped with
 bluebird.coroutine(), and others with bluebird.method(). Accepts an optional
 array of method names, wrapping only those found in the array, and disabling
-the Async suffix check.
+the Async suffix check. Returns the class.
 
 #### async-class.wrapStaticMethods(klass [, methodNames])
 
 Wraps static methods whose name ends with Async or are GeneratorFunctions.
 Any GeneratorFunction is wrapped with bluebird.coroutine(), and others with
 bluebird.method(). Accepts an optional array of method names, wrapping only
-those found in the array, and disabling the Async suffix check.
+those found in the array, and disabling the Async suffix check. Returns the
+class.
 
 #### async-class.wrapInstanceMethods(klass [, methodNames])
 
 Wraps instance methods whose name ends with Async, or are GeneratorFunctions.
 Any GeneratorFunction is wrapped with bluebird.coroutine(), and others with
 bluebird.method(). Accepts an optional array of method names, wrapping only
-those found in the array, and disabling the Async suffix check.
+those found in the array, and disabling the Async suffix check. Returns the
+class.
