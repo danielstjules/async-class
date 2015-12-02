@@ -33,6 +33,10 @@ class FakeDataStore {
     return keys;
   }
 
+  get size() {
+    return this.store.size;
+  }
+
   getAsync(key) {
     let val = this.store.get(key);
     return Promise.resolve(val);
@@ -54,8 +58,12 @@ describe('async-class', function() {
   });
 
   describe('wrap', function() {
+    it('does not modify getters', function() {
+      expect(dataStore.size).to.eql(0);
+    });
+
     it('only modifies properties that are functions', function() {
-      expect(dataStore.store).to.be.instanceOf(Map)
+      expect(dataStore.store).to.be.instanceOf(Map);
     });
 
     it('does not wrap functions that do not end with Async', function() {

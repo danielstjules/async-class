@@ -69,7 +69,7 @@ function validateMethodNames(methodNames) {
 }
 
 function wrapFunctions(target, methodNames) {
-  Object.getOwnPropertyNames(target).forEach(function(key) {
+  _actualMethodKeys(target).forEach(function(key) {
     let constructor = target[key].constructor.name;
 
     if (methodNames) {
@@ -78,14 +78,21 @@ function wrapFunctions(target, methodNames) {
       return;
     }
 
-    if (typeof target[key] !== 'function') return;
-
     if (target[key].constructor.name === 'GeneratorFunction') {
       target[key] = Promise.coroutine(target[key]);
     } else {
       target[key] = Promise.method(target[key]);
     }
   });
+}
+
+function _actualMethodKeys(target) {
+  return Object.getOwnPropertyNames(target)
+    .filter(key => {
+      var propertyDescriptor = Object.getOwnPropertyDescriptor(target, key);
+      return !propertyDescriptor.get && !propertyDescriptor.set;
+    })
+    .filter(key => typeof target[key] === 'function');
 }
 
 module.exports = {
