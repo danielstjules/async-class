@@ -90,7 +90,7 @@ function _actualMethodKeys(target) {
   return Object.getOwnPropertyNames(target)
     .filter(key => {
       var propertyDescriptor = Object.getOwnPropertyDescriptor(target, key);
-      return propertyDescriptor.get == null && propertyDescriptor.set == null;
+      return !propertyDescriptor.get && !propertyDescriptor.set;
     })
     .filter(key => typeof target[key] === 'function');
 }
