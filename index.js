@@ -10,13 +10,14 @@ let Promise = require('bluebird');
  *
  * @param   {function} klass         The class to wrap
  * @param   {string[]} [methodNames] Optional array of method names
+ * @param   {Object}   [options]     Optional options
  * @returns {function} The supplied class
  * @throws  {Error}    If methodNames is provided, but is not an array
  */
-function wrap(klass, methodNames) {
-  validateMethodNames(methodNames);
-  wrapStaticMethods(klass, methodNames);
-  wrapInstanceMethods(klass, methodNames);
+function wrap(klass, methodNames, options) {
+  options = conformOptions(methodNames, options);
+  _wrapStaticMethods(klass, options);
+  _wrapInstanceMethods(klass, options);
   return klass;
 }
 
@@ -29,13 +30,18 @@ function wrap(klass, methodNames) {
  *
  * @param   {function} klass         The class to wrap
  * @param   {string[]} [methodNames] Optional array of method names
+ * @param   {Object}   [options]     Optional options
  * @returns {function} The supplied class
  * @throws  {Error}    If methodNames is provided, but is not an array
  */
-function wrapStaticMethods(klass, methodNames) {
-  validateMethodNames(methodNames);
-  wrapFunctions(klass, methodNames);
+function wrapStaticMethods(klass, methodNames, options) {
+  options = conformOptions(methodNames, options);
+  _wrapStaticMethods(klass, options);
   return klass;
+}
+
+function _wrapStaticMethods(klass, options) {
+  _wrapFunctions(klass, options, true);
 }
 
 /**
@@ -47,41 +53,117 @@ function wrapStaticMethods(klass, methodNames) {
  *
  * @param   {function} klass         The class to wrap
  * @param   {string[]} [methodNames] Optional array of method names
+ * @param   {Object}   [options]     Optional options
  * @returns {function} The supplied class
  * @throws  {Error}    If methodNames is provided, but is not an array
  */
-function wrapInstanceMethods(klass, methodNames) {
-  validateMethodNames(methodNames);
-  wrapFunctions(klass.prototype, methodNames);
+function wrapInstanceMethods(klass, methodNames, options) {
+  options = conformOptions(methodNames, options);
+  _wrapInstanceMethods(klass, options);
   return klass;
 }
 
-/**
- * Helper function that validates the methodNames parameter.
- *
- * @param {string[]} [methodNames] Optional array of method names
- * @throws {Error}   If methodNames is provided, but is not an array
- */
-function validateMethodNames(methodNames) {
-  if (methodNames && !(methodNames instanceof Array)) {
-    throw new Error('Optional methodNames should be an array if provided');
-  }
+function _wrapInstanceMethods(klass, options) {
+  _wrapFunctions(klass.prototype, options, false);
 }
 
-function wrapFunctions(target, methodNames) {
-  _actualMethodKeys(target).forEach(function(key) {
-    let constructor = target[key].constructor.name;
+/**
+ * Helper function that conforms input arguments to a single options object.
+ *
+ * @param   {string[]} [methodNames] Optional array of method names
+ * @param   {Object}   [options] Optional options
+ * @returns {Object}   options Options object
+ * @throws  {Error}    If methodNames is provided, but is not an array,
+ *                     or options is provided, but is not an object,
+ *                     or wrapper is provided, but is not a function,
+ *                     or asyncWrapper is provided, but is not a function
+ */
+function conformOptions(methodNames, options) {
+  if (!options && methodNames && !(methodNames instanceof Array)) {
+    options = methodNames;
+    methodNames = undefined;
+  }
 
-    if (methodNames) {
-      if (methodNames.indexOf(key) === -1) return;
-    } else if (!key.endsWith('Async') && constructor !== 'GeneratorFunction') {
-      return;
+  if (!options) options = {};
+  if (typeof options != 'object' || options instanceof Array || options instanceof Date) throw new Error('Optional options should be an object if provided');
+  options = cloneOptions(options);
+
+  if (methodNames) options.methodNames = methodNames;
+  if (options.methodNames && !(options.methodNames instanceof Array)) throw new Error('Optional methodNames should be an array if provided');
+
+  if (options.wrapper === undefined) options.wrapper = Promise.coroutine;
+  if (options.wrapper && typeof options.wrapper != 'function') throw new Error('Optional wrapper should be a function if provided');
+
+  if (options.asyncWrapper === undefined) options.asyncWrapper = Promise.method;
+  if (options.asyncWrapper && typeof options.asyncWrapper != 'function') throw new Error('Optional asyncWrapper should be a function if provided');
+
+  if (options.wrapCondition === undefined) options.wrapCondition = wrapCondition;
+  if (options.wrapCondition && typeof options.wrapCondition != 'function') throw new Error('Optional wrapCondition should be a function if provided');
+
+  if (options.asyncWrapCondition === undefined) options.asyncWrapCondition = asyncWrapCondition;
+  if (options.asyncWrapCondition && typeof options.asyncWrapCondition != 'function') throw new Error('Optional asyncWrapCondition should be a function if provided');
+
+  return options;
+}
+
+/**
+ * Helper function that clones options object.
+ *
+ * @param   {Object} options Options object
+ * @returns {Object} Shallow clone of options object
+ */
+function cloneOptions(options) {
+  var out = {};
+  for (var key in options) {
+    out[key] = options[key];
+  }
+  return out;
+}
+
+/**
+ * Default wrapCondition function.
+ * Returns `true` if method should be wrapped (always), `false` if not.
+ *
+ * @returns {boolean}
+ */
+function wrapCondition() {
+    return true;
+}
+
+/**
+ * Default asyncWrapCondition function.
+ * Returns `true` if method should be wrapped (`key` ends with 'Async'), `false` if not.
+ *
+ * @param {string} key Method name
+ * @returns {boolean}
+ */
+function asyncWrapCondition(key) {
+    return key.endsWith('Async');
+}
+
+/**
+ * Wrap methods on `target` object, according to provided `options`.
+ *
+ * @param {Object} target Target object
+ * @param {Object} options Options object
+ * @param {boolean} isStatic true if `target` is class constructor, false if class prototype
+ * @returns {undefined}
+ */
+function _wrapFunctions(target, options, isStatic) {
+  _actualMethodKeys(target).forEach(function(key) {
+    let isGeneratorFunction = (target[key].constructor.name === 'GeneratorFunction');
+
+    if (options.methodNames) {
+      if (options.methodNames.indexOf(key) === -1) return;
+    } else {
+      var conditionFn = isGeneratorFunction ? options.wrapCondition : options.asyncWrapCondition;
+      if (conditionFn && !conditionFn(key, target, isStatic)) return;
     }
 
-    if (target[key].constructor.name === 'GeneratorFunction') {
-      target[key] = Promise.coroutine(target[key]);
+    if (isGeneratorFunction) {
+      if (options.wrapper) target[key] = options.wrapper(target[key]);
     } else {
-      target[key] = Promise.method(target[key]);
+      if (options.asyncWrapper) target[key] = options.asyncWrapper(target[key]);
     }
   });
 }
