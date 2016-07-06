@@ -41,7 +41,7 @@ function wrapStaticMethods(klass, methodNames, options) {
 }
 
 function _wrapStaticMethods(klass, options) {
-  wrapFunctions(klass, options);
+  wrapFunctions(klass, options, true);
 }
 
 /**
@@ -64,7 +64,7 @@ function wrapInstanceMethods(klass, methodNames, options) {
 }
 
 function _wrapInstanceMethods(klass, options) {
-  wrapFunctions(klass.prototype, options);
+  wrapFunctions(klass.prototype, options, false);
 }
 
 /**
@@ -97,6 +97,9 @@ function conformOptions(methodNames, options) {
   if (options.asyncWrapper === undefined) options.asyncWrapper = Promise.method;
   if (options.asyncWrapper && typeof options.asyncWrapper != 'function') throw new Error('Optional asyncWrapper should be a function if provided');
 
+  if (options.asyncWrapCondition === undefined) options.asyncWrapCondition = asyncWrapCondition;
+  if (options.asyncWrapCondition && typeof options.asyncWrapCondition != 'function') throw new Error('Optional asyncWrapCondition should be a function if provided');
+
   return options;
 }
 
@@ -114,17 +117,28 @@ function cloneOptions(options) {
   return out;
 }
 
-function wrapFunctions(target, options) {
+/**
+ * Default asyncWrapCondition function.
+ * Returns `true` if method should be wrapped, `false` if not.
+ *
+ * @param {string} key Method name
+ * @returns {boolean}
+ */
+function asyncWrapCondition(key) {
+    return key.endsWith('Async');
+}
+
+function wrapFunctions(target, options, isStatic) {
   _actualMethodKeys(target).forEach(function(key) {
-    let constructor = target[key].constructor.name;
+    let isGeneratorFunction = (target[key].constructor.name === 'GeneratorFunction');
 
     if (options.methodNames) {
       if (options.methodNames.indexOf(key) === -1) return;
-    } else if (!key.endsWith('Async') && constructor !== 'GeneratorFunction') {
+    } else if (!isGeneratorFunction && options.asyncWrapCondition && !options.asyncWrapCondition(key, target, isStatic)) {
       return;
     }
 
-    if (target[key].constructor.name === 'GeneratorFunction') {
+    if (isGeneratorFunction) {
       if (options.wrapper) target[key] = options.wrapper(target[key]);
     } else {
       if (options.asyncWrapper) target[key] = options.asyncWrapper(target[key]);
