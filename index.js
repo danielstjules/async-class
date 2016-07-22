@@ -41,7 +41,7 @@ function wrapStaticMethods(klass, methodNames, options) {
 }
 
 function _wrapStaticMethods(klass, options) {
-  wrapFunctions(klass, options, true);
+  _wrapFunctions(klass, options, true);
 }
 
 /**
@@ -64,7 +64,7 @@ function wrapInstanceMethods(klass, methodNames, options) {
 }
 
 function _wrapInstanceMethods(klass, options) {
-  wrapFunctions(klass.prototype, options, false);
+  _wrapFunctions(klass.prototype, options, false);
 }
 
 /**
@@ -128,7 +128,15 @@ function asyncWrapCondition(key) {
     return key.endsWith('Async');
 }
 
-function wrapFunctions(target, options, isStatic) {
+/**
+ * Wrap methods on `target` object, according to provided `options`.
+ *
+ * @param {Object} target Target object
+ * @param {Object} options Options object
+ * @param {boolean} isStatic true if `target` is class constructor, false if class prototype
+ * @returns {undefined}
+ */
+function _wrapFunctions(target, options, isStatic) {
   _actualMethodKeys(target).forEach(function(key) {
     let isGeneratorFunction = (target[key].constructor.name === 'GeneratorFunction');
 
