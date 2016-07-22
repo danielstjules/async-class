@@ -97,6 +97,9 @@ function conformOptions(methodNames, options) {
   if (options.asyncWrapper === undefined) options.asyncWrapper = Promise.method;
   if (options.asyncWrapper && typeof options.asyncWrapper != 'function') throw new Error('Optional asyncWrapper should be a function if provided');
 
+  if (options.wrapCondition === undefined) options.wrapCondition = wrapCondition;
+  if (options.wrapCondition && typeof options.wrapCondition != 'function') throw new Error('Optional wrapCondition should be a function if provided');
+
   if (options.asyncWrapCondition === undefined) options.asyncWrapCondition = asyncWrapCondition;
   if (options.asyncWrapCondition && typeof options.asyncWrapCondition != 'function') throw new Error('Optional asyncWrapCondition should be a function if provided');
 
@@ -118,8 +121,18 @@ function cloneOptions(options) {
 }
 
 /**
+ * Default wrapCondition function.
+ * Returns `true` if method should be wrapped (always), `false` if not.
+ *
+ * @returns {boolean}
+ */
+function wrapCondition() {
+    return true;
+}
+
+/**
  * Default asyncWrapCondition function.
- * Returns `true` if method should be wrapped, `false` if not.
+ * Returns `true` if method should be wrapped (`key` ends with 'Async'), `false` if not.
  *
  * @param {string} key Method name
  * @returns {boolean}
@@ -142,8 +155,9 @@ function _wrapFunctions(target, options, isStatic) {
 
     if (options.methodNames) {
       if (options.methodNames.indexOf(key) === -1) return;
-    } else if (!isGeneratorFunction && options.asyncWrapCondition && !options.asyncWrapCondition(key, target, isStatic)) {
-      return;
+    } else {
+      var conditionFn = isGeneratorFunction ? options.wrapCondition : options.asyncWrapCondition;
+      if (conditionFn && !conditionFn(key, target, isStatic)) return;
     }
 
     if (isGeneratorFunction) {
