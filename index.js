@@ -15,9 +15,9 @@ let Promise = require('bluebird');
  * @throws  {Error}    If methodNames is provided, but is not an array
  */
 function wrap(klass, methodNames, options) {
-  options = conformOptions(methodNames, options);
-  _wrapStaticMethods(klass, options);
-  _wrapInstanceMethods(klass, options);
+  options = _conformOptions(methodNames, options);
+  wrapStaticMethods(klass, options);
+  wrapInstanceMethods(klass, options);
   return klass;
 }
 
@@ -35,13 +35,9 @@ function wrap(klass, methodNames, options) {
  * @throws  {Error}    If methodNames is provided, but is not an array
  */
 function wrapStaticMethods(klass, methodNames, options) {
-  options = conformOptions(methodNames, options);
-  _wrapStaticMethods(klass, options);
+  options = _conformOptions(methodNames, options);
+  _wrapFunctions(klass, options);
   return klass;
-}
-
-function _wrapStaticMethods(klass, options) {
-  _wrapFunctions(klass, options, true);
 }
 
 /**
@@ -58,87 +54,68 @@ function _wrapStaticMethods(klass, options) {
  * @throws  {Error}    If methodNames is provided, but is not an array
  */
 function wrapInstanceMethods(klass, methodNames, options) {
-  options = conformOptions(methodNames, options);
-  _wrapInstanceMethods(klass, options);
+  options = _conformOptions(methodNames, options);
+  _wrapFunctions(klass.prototype, methodNames);
   return klass;
-}
-
-function _wrapInstanceMethods(klass, options) {
-  _wrapFunctions(klass.prototype, options, false);
 }
 
 /**
  * Helper function that conforms input arguments to a single options object.
  *
  * @param   {string[]} [methodNames] Optional array of method names
- * @param   {Object}   [options] Optional options
- * @returns {Object}   options Options object
+ * @param   {Object}   [options]     Optional options
+ * @returns {Object}   options       Options object
  * @throws  {Error}    If methodNames is provided, but is not an array,
  *                     or options is provided, but is not an object,
  *                     or wrapper is provided, but is not a function,
  *                     or asyncWrapper is provided, but is not a function
  */
-function conformOptions(methodNames, options) {
+function _conformOptions(methodNames, options) {
   if (!options && methodNames && !(methodNames instanceof Array)) {
     options = methodNames;
-    methodNames = undefined;
+    methodNames = null;
   }
 
   if (!options) options = {};
-  if (typeof options != 'object' || options instanceof Array || options instanceof Date) throw new Error('Optional options should be an object if provided');
-  options = cloneOptions(options);
+  if (typeof options !== 'object' || options instanceof Array) {
+    throw new Error('Options should be an object');
+  }
 
-  if (methodNames) options.methodNames = methodNames;
-  if (options.methodNames && !(options.methodNames instanceof Array)) throw new Error('Optional methodNames should be an array if provided');
+  options = _clone(options);
 
-  if (options.wrapper === undefined) options.wrapper = Promise.coroutine;
-  if (options.wrapper && typeof options.wrapper != 'function') throw new Error('Optional wrapper should be a function if provided');
+  if (methodNames) {
+    options.methodNames = methodNames;
+    if (!(methodNames instanceof Array)) {
+      throw new Error('Optional methodNames should be an array');
+    }
+  }
 
-  if (options.asyncWrapper === undefined) options.asyncWrapper = Promise.method;
-  if (options.asyncWrapper && typeof options.asyncWrapper != 'function') throw new Error('Optional asyncWrapper should be a function if provided');
+  if (!options.wrapper) options.wrapper = Promise.coroutine;
+  if (options.wrapper && typeof options.wrapper !== 'function') {
+    throw new Error('Optional wrapper should be a function');
+  }
 
-  if (options.wrapCondition === undefined) options.wrapCondition = wrapCondition;
-  if (options.wrapCondition && typeof options.wrapCondition != 'function') throw new Error('Optional wrapCondition should be a function if provided');
-
-  if (options.asyncWrapCondition === undefined) options.asyncWrapCondition = asyncWrapCondition;
-  if (options.asyncWrapCondition && typeof options.asyncWrapCondition != 'function') throw new Error('Optional asyncWrapCondition should be a function if provided');
+  if (!options.asyncWrapper) options.asyncWrapper = Promise.method;
+  if (options.asyncWrapper && typeof options.asyncWrapper !== 'function') {
+    throw new Error('Optional asyncWrapper should be a function');
+  }
 
   return options;
 }
 
 /**
- * Helper function that clones options object.
+ * Helper function that performs a shallow clone of an object.
  *
  * @param   {Object} options Options object
  * @returns {Object} Shallow clone of options object
  */
-function cloneOptions(options) {
-  var out = {};
-  for (var key in options) {
-    out[key] = options[key];
+function _clone(obj) {
+  var res = {};
+  for (var key in obj) {
+    res[key] = obj[key];
   }
-  return out;
-}
 
-/**
- * Default wrapCondition function.
- * Returns `true` if method should be wrapped (always), `false` if not.
- *
- * @returns {boolean}
- */
-function wrapCondition() {
-    return true;
-}
-
-/**
- * Default asyncWrapCondition function.
- * Returns `true` if method should be wrapped (`key` ends with 'Async'), `false` if not.
- *
- * @param {string} key Method name
- * @returns {boolean}
- */
-function asyncWrapCondition(key) {
-    return key.endsWith('Async');
+  return res;
 }
 
 /**
@@ -146,21 +123,19 @@ function asyncWrapCondition(key) {
  *
  * @param {Object} target Target object
  * @param {Object} options Options object
- * @param {boolean} isStatic true if `target` is class constructor, false if class prototype
  * @returns {undefined}
  */
 function _wrapFunctions(target, options, isStatic) {
   _actualMethodKeys(target).forEach(function(key) {
-    let isGeneratorFunction = (target[key].constructor.name === 'GeneratorFunction');
+    let isGeneratorFn = (target[key].constructor.name === 'GeneratorFunction');
 
     if (options.methodNames) {
       if (options.methodNames.indexOf(key) === -1) return;
-    } else {
-      var conditionFn = isGeneratorFunction ? options.wrapCondition : options.asyncWrapCondition;
-      if (conditionFn && !conditionFn(key, target, isStatic)) return;
+    } else if (!key.endsWith('Async') || !(target[key] instanceof Function)) {
+      return;
     }
 
-    if (isGeneratorFunction) {
+    if (isGeneratorFn) {
       if (options.wrapper) target[key] = options.wrapper(target[key]);
     } else {
       if (options.asyncWrapper) target[key] = options.asyncWrapper(target[key]);
